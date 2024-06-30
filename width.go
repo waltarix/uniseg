@@ -38,14 +38,7 @@ func runeWidth(r rune, graphemeProperty int) int {
 		return 4
 	}
 
-	switch propertyEastAsianWidth(r) {
-	case prW, prF:
-		return 2
-	case prA:
-		return EastAsianAmbiguousWidth
-	}
-
-	return 1
+	return wcwidth9_lookup_width(r)
 }
 
 // StringWidth returns the monospace width for the given string, that is, the
@@ -58,4 +51,22 @@ func StringWidth(s string) (width int) {
 		width += w
 	}
 	return
+}
+
+func wcwidth9_lookup_width(r rune) int {
+	c := int(r)
+
+	t1_offset := wcwidth9_tables_0[c>>13&0xFF]
+
+	t2_offset := wcwidth9_tables_1[128*t1_offset+(c>>6&0x7F)]
+
+	packed_widths := wcwidth9_tables_2[16*t2_offset+(c>>2&0xF)]
+
+	width := packed_widths >> (2 * (c & 0b11)) & 0b11
+
+	if width == 3 {
+		return -1
+	}
+
+	return width
 }
